@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "Bash(mkdir:*)",
+      "WebFetch",
+      "Bash(ls:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(python -m pylint:*)",
+      "Bash(pip install:*)",
+      "Bash(npx create-next-app@latest frontend --typescript --tailwind --app --no-src-dir --import-alias \"@/*\" --use-npm)",
+      "Bash(npm install)",
+      "Bash(npm run build:*)",
+      "Bash(rm:*)",
+      "Bash(if not exist \"D:\\\\Arena\\\\AgenticCode\\\\taskmanager\\\\test_data\" mkdir \"D:\\\\Arena\\\\AgenticCode\\\\taskmanager\\\\test_data\")",
+      "Bash(time:*)",
+      "Bash(python -m backend.app.main:*)"
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+# LLM model configuration for vLLM API
+
+llm:
+  # Model settings
+  model_name: "meta-llama/Llama-2-7b-chat-hf"  # Change to your model
+
+  # API endpoint (vLLM server endpoint)
+  # For local development: http://localhost:8001/v1
+  # For production: use your vLLM server URL
+  api_base: "${oc.env:VLLM_API_BASE,http://localhost:8001/v1}"
+
+  # API key (vLLM often doesn't require a real key, but some deployments might)
+  api_key: "${oc.env:VLLM_API_KEY,EMPTY}"
+
+  # Generation parameters
+  temperature: 0.7
+  max_tokens: 150
+  top_p: 0.9
+  frequency_penalty: 0.0
+  presence_penalty: 0.0
+
+  # Timeout settings
+  request_timeout: 30  # seconds
+
+  # Retry settings
+  max_retries: 3
+  retry_delay: 1  # seconds

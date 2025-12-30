@@ -1,0 +1,66 @@
+# Prompt templates for AI summary generation and modification
+
+prompts:
+  summaries:
+    # Configuration for summary generation
+    generation:
+      # System message for summary generation
+      system_message: |
+        You are an AI assistant that generates concise, single-line task summaries.
+        Your summaries should be:
+        - One sentence only (max 80 characters)
+        - Clear and descriptive
+        - Action-oriented
+        - Professional but friendly tone
+
+      # Prompt template for generating summaries
+      # Available variables: task_title, task_description
+      prompt_template: |
+        Generate a concise, single-line summary for this task:
+
+        Title: {task_title}
+        Description: {task_description}
+
+        Return ONLY the summary sentence, nothing else.
+
+    # Configuration for summary modification
+    modification:
+      # System message for summary modification
+      system_message: |
+        You are an AI assistant that modifies task summaries based on user requests.
+        You should:
+        - Keep the summary concise (one sentence, max 80 characters)
+        - Apply the user's requested changes
+        - Maintain clarity and professionalism
+        - Preserve the core meaning unless explicitly asked to change it
+
+      # Prompt template for modifying summaries
+      # Available variables: current_summary, modification_prompt
+      prompt_template: |
+        Modify this task summary based on the user's request:
+
+        Current summary: {current_summary}
+        User request: {modification_prompt}
+
+        Return ONLY the modified summary, nothing else.
+
+    # Examples for reference (not used in generation)
+    examples:
+      generation:
+        - input: "Implement user authentication"
+          output: "Implement secure user authentication with JWT tokens"
+        - input: "Fix bug in payment processing"
+          output: "Resolve payment processing error in checkout flow"
+        - input: "Write documentation for API"
+          output: "Create comprehensive API documentation with examples"
+
+      modification:
+        - current: "Implement secure user authentication with JWT tokens"
+          request: "Make it shorter"
+          output: "Implement JWT authentication"
+        - current: "Resolve payment processing error in checkout flow"
+          request: "Add more technical detail"
+          output: "Fix null pointer exception in payment gateway integration"
+        - current: "Create comprehensive API documentation with examples"
+          request: "Focus on endpoints only"
+          output: "Document all REST API endpoints and parameters"

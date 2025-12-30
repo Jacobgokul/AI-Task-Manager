@@ -1,0 +1,24 @@
+# Database configuration for PostgreSQL
+
+database:
+  # Database connection settings
+  host: "localhost"
+  port: 5432
+  database: "taskmanager"
+  user: "taskmanager_user"
+
+  # Password should be set via environment variable DB_PASSWORD
+  # For local development, you can use: export DB_PASSWORD=your_password
+  # For production, use proper secrets management
+  password: "${oc.env:DB_PASSWORD,taskmanager_password}"
+
+  # Connection pool settings
+  pool_size: 10
+  max_overflow: 20
+  pool_pre_ping: true
+
+  # SQL echo (set to true for debugging)
+  echo: false
+
+  # Connection timeout
+  connect_timeout: 30
