@@ -22,6 +22,15 @@ def test_db():
     """
     # Create in-memory database
     engine = create_engine("sqlite:///:memory:", echo=False)
+
+    # Enable foreign key constraints for SQLite
+    from sqlalchemy import event
+    @event.listens_for(engine, "connect")
+    def set_sqlite_pragma(dbapi_conn, connection_record):
+        cursor = dbapi_conn.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
     Base.metadata.create_all(engine)
 
     # Create session

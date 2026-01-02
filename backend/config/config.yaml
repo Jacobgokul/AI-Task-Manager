@@ -7,12 +7,13 @@ app:
   debug: false
   log_level: "INFO"
 
-# Database configuration (reference to db/database.yaml)
+# Database and LLM configuration
+# Hydra defaults - these will be merged into the main config
 defaults:
   - db: database
   - llm: model_config
-  - llm: insult_prompts
-  - llm: summary_prompts
+  - prompts
+  - _self_
 
 # API settings
 api:

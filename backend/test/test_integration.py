@@ -870,21 +870,57 @@ class TestAPIEndpointIntegration:
     @pytest.fixture
     def client(self, test_db, mock_llm_client, mock_config):
         """Create a FastAPI test client with mocked dependencies."""
-        from backend.app.main import app, get_config, get_llm_client
+        from backend.app.dependencies import get_config, get_llm_client, set_llm_client
         from backend.app.utils.database import get_db
+
+        # Import app without triggering lifespan
+        from fastapi import FastAPI
+        from backend.app.endpoint import (
+            task_routes,
+            summary_routes,
+            analytics_routes,
+            deadline_routes,
+        )
+
+        # Create a test app without lifespan
+        app = FastAPI(
+            title="AI Task Manager API - Test",
+            description="Test instance",
+            version="1.0.0",
+        )
+
+        # Include routers
+        app.include_router(task_routes.router)
+        app.include_router(summary_routes.router)
+        app.include_router(analytics_routes.router)
+        app.include_router(deadline_routes.router)
+
+        # Add health endpoint
+        @app.get("/health")
+        async def health_check():
+            return {"status": "healthy", "service": "AI Task Manager API", "version": "1.0.0"}
+
+        # Add root endpoint
+        @app.get("/")
+        async def root():
+            return {
+                "service": "AI Task Manager API",
+                "version": "1.0.0",
+                "description": "Backend API for AI-powered task management",
+                "docs": "/docs",
+                "health": "/health"
+            }
 
         # Override dependencies
         app.dependency_overrides[get_db] = lambda: test_db
         app.dependency_overrides[get_config] = lambda: mock_config
         app.dependency_overrides[get_llm_client] = lambda: mock_llm_client
 
-        with patch('backend.app.main.load_config', return_value=mock_config):
-            with patch('backend.app.main.init_database'):
-                with patch('backend.app.main.create_tables'):
-                    with patch('backend.app.main.close_database'):
-                        with patch('backend.app.main.LLMClient', return_value=mock_llm_client):
-                            client = TestClient(app, raise_server_exceptions=False)
-                            yield client
+        # Set LLM client globally for dependencies
+        set_llm_client(mock_llm_client)
+
+        client = TestClient(app, raise_server_exceptions=False)
+        yield client
 
         # Clean up overrides
         app.dependency_overrides.clear()

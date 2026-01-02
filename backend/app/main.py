@@ -169,11 +169,19 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
+    import os
+
+    # Security: Use environment variable for host binding
+    # Development: 0.0.0.0 allows external connections
+    # Production: Should use 127.0.0.1 or specific IP with proper firewall
+    bind_host = os.getenv("BIND_HOST", "0.0.0.0")
+    bind_port = int(os.getenv("BIND_PORT", "8000"))
+    is_development = os.getenv("ENV", "development") == "development"
 
     uvicorn.run(
         "backend.app.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
+        host=bind_host,
+        port=bind_port,
+        reload=is_development,
         log_level="info"
     )

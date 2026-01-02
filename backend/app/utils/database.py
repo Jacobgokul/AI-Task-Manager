@@ -1,6 +1,6 @@
 """Database configuration and session management."""
 import logging
-from typing import AsyncGenerator, Optional
+from typing import Generator, Optional
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -32,7 +32,7 @@ def init_database(config: DictConfig) -> None:
 
     try:
         # Extract database configuration
-        db_config = config.database
+        db_config = config.db
 
         # Build database URL
         database_url = (
@@ -90,7 +90,7 @@ def create_tables() -> None:
         raise
 
 
-def get_db() -> AsyncGenerator[Session, None]:
+def get_db() -> Generator[Session, None, None]:
     """
     Dependency function to get database session.
 

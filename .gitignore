@@ -56,8 +56,12 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
+nul
 
 # Node (for future frontend)
 node_modules/
 .next/
 out/
+
+# Claude files
+.claude-workspace/

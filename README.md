@@ -104,6 +104,12 @@ taskmanager/
    GRANT ALL PRIVILEGES ON DATABASE taskmanager TO taskmanager_user;
    ```
 
+   Connect to the database and grant schema permissions:
+   ```sql
+   \c taskmanager
+   GRANT USAGE, CREATE ON SCHEMA public TO taskmanager_user;
+   ```
+
 4. **Configure application settings**
 
    All configuration is managed through Hydra YAML files in `backend/config/`. Update the following files:
@@ -159,7 +165,6 @@ You need to run both the backend and frontend servers simultaneously.
 
 1. **Navigate to project root and start FastAPI server**
    ```bash
-   cd backend
    python -m backend.app.main
    ```
 

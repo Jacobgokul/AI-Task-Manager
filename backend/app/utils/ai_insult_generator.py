@@ -123,14 +123,14 @@ class AIInsultGenerator:
             "Even Internet Explorer would have finished this task by now.",
             "This deadline has more bugs than your last code review.",
             "404: Motivation not found. Please try again later.",
-            "Your procrastination skills are more advanced than your coding skills.",
+            "Your procrastination skills are more advanced than your code skills.",
             "Git commit -m 'Added deadline. Will fix later. (Narrator: They did not fix it later)'",
         ]
 
-        # Use simple hash to pick consistent fallback per call
-        import random
-        random.seed()  # Seed with current time for variety
-        return random.choice(fallback_insults)
+        # Use secrets module for cryptographically secure random selection
+        # Although not strictly necessary for insults, it's a security best practice
+        import secrets
+        return secrets.choice(fallback_insults)
 
     def batch_generate_insults(self, db: Session, tasks: list[Task]) -> dict[int, str]:
         """

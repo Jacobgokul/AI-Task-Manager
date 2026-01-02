@@ -35,6 +35,60 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Note**: vLLM will call external APIs - use LangChain for external API integrations and LLM model interactions.
 
+## Common Commands
+
+### Backend Development
+```bash
+# IMPORTANT: Activate virtual environment first
+# Detection: Look for directories with Scripts/activate.bat (Windows) or bin/activate (Unix)
+# Common names: .venv, venv, env, but can be any custom name (env3, myenv, etc.)
+# Activate: <venv_name>\Scripts\activate (Windows) or source <venv_name>/bin/activate (Unix)
+
+# Run backend server (from project root)
+cd backend
+python -m backend.app.main
+
+# Or using uvicorn directly
+uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+
+# Run all tests
+pytest
+
+# Run tests with coverage
+pytest --cov=backend.app --cov-report=html
+
+# Run specific test file
+pytest test/test_task_routes.py
+
+# Run tests with verbose output
+pytest -v
+
+# Run linting
+pylint backend/app
+
+# Initialize database (if scripts exist)
+python -m backend.scripts.init_db
+```
+
+### Frontend Development
+```bash
+# Navigate to frontend and install dependencies
+cd frontend
+npm install
+
+# Run development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
+
+# Run linting
+npm run lint
+```
+
 ### Project Structure
 
 ```
@@ -135,7 +189,126 @@ taskmanager/
 
 This project is configured with a specialized multi-agent workflow system for efficient development. The project uses custom Claude Code agents to handle different aspects of the development lifecycle.
 
+## Architecture Patterns
+
+### Backend Architecture
+
+**Configuration Management with Hydra**:
+- All configuration is in YAML files under `backend/config/`
+- Main config at `backend/config/config.yaml` uses Hydra's defaults system
+- Config is loaded at startup using `hydra.compose()` and `hydra.initialize()`
+- Access config via dependency injection through `backend.app.dependencies.load_config()`
+
+**Database Architecture**:
+- SQLAlchemy ORM with session management in `backend/app/utils/database.py`
+- Models in `backend/app/models/` define database schema
+- Database initialization happens in FastAPI lifespan context manager
+- Session management uses dependency injection pattern via `get_db()` dependency
+
+**API Routing Pattern**:
+- All routes organized by domain in `backend/app/endpoint/`
+- Each route file has its own APIRouter with consistent prefix pattern
+- Routers included in main app via `app.include_router()`
+- Standard endpoint structure:
+  - Task operations: `/api/tasks`
+  - Summary operations: `/api/summaries`
+  - Analytics: `/api/analytics`
+  - Deadlines: `/api/deadlines`
+
+**LLM Client Architecture**:
+- Centralized LLM client in `backend/app/utils/llm_client.py`
+- Uses LangChain for LLM API calls (OpenAI-compatible via vLLM)
+- Client initialized at app startup and accessed via dependency injection
+- Prompt templates stored in Hydra config files (`backend/config/llm/`)
+
+**Dependency Injection Pattern**:
+- Global dependencies in `backend/app/dependencies.py`
+- LLM client singleton pattern with `get_llm_client()` function
+- Database sessions via `get_db()` generator function
+- Config loaded once at startup and cached
+
+### Frontend Architecture
+
+**Next.js App Router Structure**:
+- Uses Next.js 14+ App Router (not Pages Router)
+- Server-side and client-side components mixed
+- Pages in `src/app/` directory with route-based file structure
+- Layout component at `src/app/layout.tsx` wraps all pages
+
+**API Client Pattern**:
+- Centralized API functions in `src/lib/api.ts`
+- Uses fetch API with consistent error handling
+- Base URL configured for backend communication
+- Type-safe responses using TypeScript types from `src/types/`
+
+**Component Organization**:
+- Reusable components in `src/components/`
+- Each component handles its own state and side effects
+- Props interfaces defined inline or in types file
+- Follows React hooks pattern (no class components)
+
+**State Management**:
+- Uses React built-in state (useState, useEffect)
+- No external state management library (Redux, Zustand)
+- API calls trigger re-renders via state updates
+
+### Database Schema Overview
+
+The application uses three main tables with the following relationships:
+
+**Users Table** (`backend/app/models/user.py`):
+- Primary key: `id`
+- Fields: `username`, `email`, `created_at`
+- Relationships: One-to-many with tasks and analytics
+
+**Tasks Table** (`backend/app/models/task.py`):
+- Primary key: `id`
+- Foreign key: `user_id` → users.id
+- Core fields: `title`, `description`, `deadline`, `completed`
+- AI-generated fields: `summary`, `insult_message`
+- Timestamps: `created_at`, `updated_at`
+
+**Analytics Table** (`backend/app/models/analytics.py`):
+- Primary key: `id`
+- Foreign key: `user_id` → users.id
+- Event tracking: `event_type`, `event_timestamp`, `task_title`, `deadline`
+- Performance metrics: `was_completed_on_time`, `completion_delay_hours`
+
+### Key Technical Decisions
+
+**Why Hydra instead of .env files**:
+- Provides hierarchical configuration with composition
+- Supports environment-specific configs without code changes
+- Type-safe config access with OmegaConf
+- Easier to manage complex LLM prompt templates in YAML
+
+**Why LangChain for LLM integration**:
+- Abstracts different LLM providers (OpenAI, vLLM, etc.)
+- Built-in retry logic and error handling
+- Template management for prompts
+- Easy to swap LLM providers without code changes
+
+**FastAPI Lifespan Pattern**:
+- Database connections initialized once at startup
+- LLM client health check performed during startup
+- Graceful cleanup on shutdown
+- Prevents connection leaks and ensures proper resource management
+
 ## Important Guidelines
+
+**Virtual Environment Management**:
+- Always detect and activate virtual environment before running Python code
+- Virtual environments can have any name (not just .venv, venv, env)
+- Detect by checking for `Scripts/activate.bat` (Windows) or `bin/activate` (Unix)
+- Or check for `pyvenv.cfg` file in directories
+- Use `python -m <module>` to ensure using venv Python
+
+**Changelog and Task Tracking (CRITICAL)**:
+- **ALWAYS update `.claude-workspace/CHANGELOG.md`** after making ANY code changes
+- Format: `## [YYYY-MM-DD HH:MM:SS] - [Agent Name]` with task, changes, files, status, testing results
+- When asked about completed/pending tasks, check CHANGELOG.md FIRST - do NOT scan code
+- When asked about test results, check `.claude-workspace/TESTING.md` FIRST
+- Create `.claude-workspace/` directory if it doesn't exist
 
 **Do NOT create extra or unwanted markdown files**:
 - Do not create documentation markdown files unless explicitly requested by the user
@@ -158,6 +331,7 @@ This repository uses a **multi-agent development workflow** with specialized age
 2. **Frontend Development** → frontend-design-architect agent designs and creates user interfaces
 3. **Code Quality** → code-quality-enforcer agent writes unit tests and runs linting
 4. **Integration Testing** → integration-tester agent performs comprehensive testing and logs results
+5. **Security Audit** → security-auditor agent scans for vulnerabilities and auto-remediates if score < 90%
 
 ### Agent Coordination Pattern
 
@@ -166,7 +340,9 @@ When implementing features, follow this sequence:
 1. **Implementation Phase**: Use backend-dev or frontend-design-architect agents based on the task
 2. **Quality Assurance**: After code is written, **automatically** invoke code-quality-enforcer agent
 3. **Integration Testing**: After backend/frontend work is complete, **automatically** invoke integration-tester agent
-4. **Resolution Loop**: If tests fail, communicate back to the appropriate dev agent for fixes
+4. **Security Audit**: After testing is complete, **automatically** invoke security-auditor agent
+5. **Auto-Remediation Loop**: If security score < 90%, agents fix issues and re-audit until >= 90%
+6. **Resolution Loop**: If tests fail, communicate back to the appropriate dev agent for fixes
 
 ## Specialized Agents
 
@@ -180,7 +356,7 @@ Key practices:
 - SQLAlchemy ORM for PostgreSQL database interactions
 - Database migrations using Alembic
 - Proper database indexing and query optimization
-- Environment variables for configuration (.env files)
+- Hydra YAML files for configuration (no .env files)
 - Security: parameterized queries, input validation, proper auth
 
 ### frontend-design-architect
@@ -213,8 +389,15 @@ Automatically invoked after features are complete. Performs:
 
 ## Testing and Quality Standards
 
-### Test Data Location
-All test results are logged to: `test_data/testing.md`
+### Claude Workspace Location
+All Claude-related logs and files: `.claude-workspace/`
+- **CHANGELOG.md**: All code changes made by agents with timestamps (YYYY-MM-DD HH:MM:SS)
+- **test_log/**: Directory containing timestamped test execution logs
+  - Format: `testing_YYYYMMDD_HHMMSS.md` (e.g., `testing_20260102_143055.md`)
+  - Each test run creates a NEW file with collapsible sections using `<details>` tags
+  - Never appends to existing files
+- **SECURITY_AUDIT.md**: All security audit results with scores and remediation tracking
+- **IMPORTANT**: When asked "what's completed" or "what's pending", check CHANGELOG.md - do NOT scan code
 
 ### Testing Strategy
 - **Unit tests**: Written by code-quality-enforcer for all new code
@@ -235,11 +418,48 @@ All test results are logged to: `test_data/testing.md`
 - No critical linting errors
 - All tests passing before completion
 
+### Testing Patterns in This Codebase
+
+**Pytest Fixtures** (`backend/test/conftest.py`):
+- Shared fixtures for database sessions, test clients, mock LLM clients
+- Use fixtures to set up test data and tear down after tests
+- Fixtures follow pytest's scope model (function, module, session)
+
+**Mocking LLM Calls**:
+- Always mock LangChain LLM calls in unit tests
+- Use `unittest.mock.patch` or `pytest-mock` for mocking
+- Mock at the `llm_client.py` level, not individual LangChain classes
+- Example pattern:
+  ```python
+  @patch('backend.app.utils.llm_client.LLMClient.generate_insult')
+  def test_deadline_check(mock_generate):
+      mock_generate.return_value = "Test insult"
+      # test logic here
+  ```
+
+**Database Testing Pattern**:
+- Use SQLAlchemy session fixtures that rollback after each test
+- Create test data using model instances, not raw SQL
+- Test database operations in isolation from API layer
+- Never use production database for tests
+
+**API Route Testing**:
+- Use FastAPI TestClient from `fastapi.testclient`
+- Mock all dependencies (database, LLM client) via dependency overrides
+- Test HTTP status codes, response schemas, and error cases
+- Example:
+  ```python
+  from fastapi.testclient import TestClient
+  client = TestClient(app)
+  response = client.get("/api/tasks")
+  assert response.status_code == 200
+  ```
+
 ## Security Best Practices
 
 **Critical requirements across all agents:**
 - Never hardcode secrets, API keys, or credentials
-- Use environment variables for sensitive configuration
+- Use Hydra YAML configuration files for sensitive configuration (not .env files)
 - Parameterized queries to prevent SQL injection
 - Input validation at all API boundaries
 - Proper authentication and authorization checks

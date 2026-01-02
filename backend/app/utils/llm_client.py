@@ -29,6 +29,13 @@ class LLMClient:
         """
         try:
             self.config = config.llm
+
+            # Validate required configuration keys
+            if "model_name" not in self.config:
+                raise ValueError("Missing LLM configuration key: 'model_name'")
+            if "api_base" not in self.config:
+                raise ValueError("Missing LLM configuration key: 'api_base'")
+
             self.model_name = self.config.model_name
             self.api_base = self.config.api_base
             self.api_key = self.config.get("api_key", "EMPTY")  # vLLM often doesn't need a real key
@@ -39,18 +46,17 @@ class LLMClient:
             # This works with OpenAI-compatible APIs including vLLM
             self._client = ChatOpenAI(
                 model=self.model_name,
-                openai_api_base=self.api_base,
-                openai_api_key=self.api_key,
+                base_url=self.api_base,
+                api_key=self.api_key,
                 temperature=self.temperature,
                 max_tokens=self.max_tokens,
             )
 
             logger.info(f"Initialized LLM client with model: {self.model_name}")
 
-        except KeyError as e:
-            error_msg = f"Missing LLM configuration key: {e}"
-            logger.error(error_msg)
-            raise ValueError(error_msg) from e
+        except ValueError:
+            # Re-raise ValueError as-is
+            raise
         except Exception as e:
             error_msg = f"Failed to initialize LLM client: {e}"
             logger.error(error_msg)
@@ -97,8 +103,8 @@ class LLMClient:
                 # Create temporary client with overridden parameters
                 temp_client = ChatOpenAI(
                     model=self.model_name,
-                    openai_api_base=self.api_base,
-                    openai_api_key=self.api_key,
+                    base_url=self.api_base,
+                    api_key=self.api_key,
                     temperature=kwargs.get("temperature", self.temperature),
                     max_tokens=kwargs.get("max_tokens", self.max_tokens),
                 )

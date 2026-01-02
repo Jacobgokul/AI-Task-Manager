@@ -64,8 +64,8 @@ class TestLLMClientInit:
 
             mock_chat.assert_called_once_with(
                 model="test-model",
-                openai_api_base="http://localhost:8001/v1",
-                openai_api_key="test_key",
+                base_url="http://localhost:8001/v1",
+                api_key="test_key",
                 temperature=0.7,
                 max_tokens=150,
             )
